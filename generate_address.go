@@ -9,11 +9,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mr-tron/base58"
+	"github.com/anaskhan96/base58check"
 	"golang.org/x/crypto/ripemd160"
 )
 
 func main() {
+	// Start with random number and generate Public Key from elliptic curve formula
 	var secret, err = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "generate key: %v\n", err)
@@ -22,11 +23,11 @@ func main() {
 	encodedPublicKeyX := hex.EncodeToString(secret.PublicKey.X.Bytes())
 	encodedPublicKeyY := hex.EncodeToString(secret.PublicKey.Y.Bytes())
 
-	fmt.Println("x:" + encodedPublicKeyX)
-	fmt.Println("y:" + encodedPublicKeyY)
+	fmt.Println("Public Key - X Coordinate: " + encodedPublicKeyX)
+	fmt.Println("Public Key - Y Coordinate: " + encodedPublicKeyY)
 
 	uncompressedPublicKey := "04" + encodedPublicKeyX + encodedPublicKeyY
-	fmt.Println("uncompressed public key:" + uncompressedPublicKey)
+	fmt.Println("Uncompressed Public Key: " + uncompressedPublicKey)
 
 	var compressedKey string
 	if secret.PublicKey.Y.Bit(0) == 0 { // big int even check
@@ -34,15 +35,21 @@ func main() {
 	} else { // otherwise odd
 		compressedKey = "03" + encodedPublicKeyX
 	}
-	fmt.Println("compressed public key:" + compressedKey)
+	fmt.Println("Compressed Public Key: " + compressedKey)
 
-	sum256Encoded := sha256.Sum256([]byte(compressedKey))
-	hasher := ripemd160.New()
-	hasher.Write(sum256Encoded[:]) // convert [32] byte to []byte by creating slice
+	// Take Compressed Public Key and generate a valid Bitcoin Address
+	// A = RIPEMD160(SHA256(K))
+	sum256Encoded := sha256.Sum256([]byte(compressedKey)) // SHA256(K)
+	hasher := ripemd160.New()                             // RIPEMD160
+	hasher.Write(sum256Encoded[:])                        // convert [32] byte to []byte by creating slice
 	hashBytes := hasher.Sum(nil)
 	A := fmt.Sprintf("%x", hashBytes)
-	fmt.Println("address before base58 encoding:" + A)
+	fmt.Println("Address before Base58Check encoding: " + A)
 
-	base58EncodedAddress := base58.Encode(hashBytes)
-	fmt.Printf("Successfully base58 encoded address: %s\n", base58EncodedAddress)
+	// Base58 Check Encoding
+	base58EncodedAddress, err := base58check.Encode("00", hex.EncodeToString(hashBytes))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "base58check: %v\n", err)
+	}
+	fmt.Printf("Successfully generated Base58Check encoded bitcoin address: %s\n", base58EncodedAddress)
 }
