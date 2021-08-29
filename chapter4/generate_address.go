@@ -1,4 +1,4 @@
-package main
+package chapter4
 
 import (
 	"crypto/ecdsa"
@@ -13,13 +13,16 @@ import (
 	"golang.org/x/crypto/ripemd160"
 )
 
-func main() {
-	// Start with random number and generate Public Key from elliptic curve formula
+func GenerateKey() *ecdsa.PrivateKey {
 	var secret, err = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "generate key: %v\n", err)
+		os.Exit(1)
 	}
+	return secret
+}
 
+func GenerateBitcoinAddress(secret *ecdsa.PrivateKey) string {
 	encodedPublicKeyX := hex.EncodeToString(secret.PublicKey.X.Bytes())
 	encodedPublicKeyY := hex.EncodeToString(secret.PublicKey.Y.Bytes())
 
@@ -52,4 +55,5 @@ func main() {
 		fmt.Fprintf(os.Stderr, "base58check: %v\n", err)
 	}
 	fmt.Printf("Successfully generated Base58Check encoded bitcoin address: %s\n", base58EncodedAddress)
+	return base58EncodedAddress
 }
