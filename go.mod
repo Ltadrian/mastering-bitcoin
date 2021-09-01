@@ -10,3 +10,5 @@ require (
 )
 
 replace github.com/adriangracia/mastering-bitcoin/chapter4 => ./chapter4
+
+replace github.com/adriangracia/mastering-bitcoin/chapter5 => ./chapter5
